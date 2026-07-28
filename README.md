@@ -1,1 +1,1 @@
-# drug-discovery-rag
+# predict-drug-response
