@@ -1,0 +1,19 @@
+# Raw and generated datasets
+data/raw/
+data/processed/
+
+# Keep the folders visible in Git
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Optional: trained models can become large
+artifacts/trained_models/*.joblib
