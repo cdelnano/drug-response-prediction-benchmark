@@ -12,13 +12,13 @@ The project is designed with a modular architecture so multiple machine learning
 
 ### Gene Expression
 
-- Source: DepMap Public Release
+- Source: DepMap Public Release (https://depmap.org/portal/data_page/?tab=currentRelease)
 - Features: RNA-seq gene expression
 - ~19,000 gene expression features per cell line
 
 ### Drug Response
 
-- Source: PRISM Repurposing Primary Screen
+- Source: PRISM Repurposing Primary Screen (https://depmap.org/repurposing/)
 - Target: Drug response (log fold change) for a selected treatment
 
 The datasets are merged on `ModelID`, which uniquely identifies each cancer cell line.
