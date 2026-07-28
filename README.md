@@ -1,1 +1,1 @@
-# predict-drug-response
+# drug-response-prediction-benchmark
