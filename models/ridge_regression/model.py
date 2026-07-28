@@ -103,14 +103,15 @@ RESIDUAL_PLOT_OUTPUT_PATH = (
 RANDOM_STATE = 42
 CROSS_VALIDATION_FOLDS = 5
 
-RIDGE_ALPHA_VALUES = [
-    0.01,
-    0.1,
-    1.0,
-    10.0,
-    100.0,
-    1000.0,
-]
+RIDGE_ALPHA_VALUES = np.logspace(-2, 6, 17)
+# RIDGE_ALPHA_VALUES = [
+#     0.01,
+#     0.1,
+#     1.0,
+#     10.0,
+#     100.0,
+#     1000.0,
+# ]
 
 
 def validate_file_exists(
@@ -468,26 +469,49 @@ def create_coefficients_dataframe(
         ascending=False,
     )
 
+def convert_to_json_serializable(value):
+    if isinstance(value, dict):
+        return {
+            key: convert_to_json_serializable(item)
+            for key, item in value.items()
+        }
 
-def save_json(
-    data: dict[str, Any],
-    output_path: Path,
-) -> None:
-    """Save a dictionary as formatted JSON."""
+    if isinstance(value, list):
+        return [
+            convert_to_json_serializable(item)
+            for item in value
+        ]
 
+    if isinstance(value, tuple):
+        return [
+            convert_to_json_serializable(item)
+            for item in value
+        ]
+
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+
+    if isinstance(value, np.generic):
+        return value.item()
+
+    return value
+
+def save_json(data, output_path):
     output_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
+
+    serializable_data = convert_to_json_serializable(data)
 
     with output_path.open(
         "w",
         encoding="utf-8",
     ) as file:
         json.dump(
-            data,
+            serializable_data,
             file,
-            indent=2,
+            indent=4,
             allow_nan=False,
         )
 
@@ -604,10 +628,8 @@ def main() -> None:
         metrics=ridge_metrics,
     )
 
-    print(
-        "\nBest Ridge parameters:",
-        ridge_search.best_params_,
-    )
+    best_alpha = float(ridge_search.best_params_["ridge__alpha"])
+    print(f"\nBest Ridge alpha: {best_alpha:.4f}")
 
     print(
         "Cross-validation MAE:",
