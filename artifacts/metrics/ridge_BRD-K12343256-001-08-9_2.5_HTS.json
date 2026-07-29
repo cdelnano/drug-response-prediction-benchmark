@@ -35,6 +35,7 @@
         "ridge__alpha": 3162.2776601683795
     },
     "cross_validation_mae": 0.7688786504988252,
+    "cross_validation_mae_std": 0.03492113166813895,
     "baseline_metrics": {
         "mae": 0.9270594518666299,
         "rmse": 1.1647903123477326,

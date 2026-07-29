@@ -607,6 +607,12 @@ def main() -> None:
         y_train,
     )
 
+    best_index = ridge_search.best_index_
+
+    cross_validation_mae = -ridge_search.best_score_
+
+    cross_validation_mae_std = ridge_search.cv_results_["std_test_score"][best_index]
+
     best_model = ridge_search.best_estimator_
 
     ridge_predictions = best_model.predict(
@@ -633,7 +639,8 @@ def main() -> None:
 
     print(
         "Cross-validation MAE:",
-        f"{-ridge_search.best_score_:.4f}",
+        f"{cross_validation_mae:.4f} ± "
+        f"{cross_validation_mae_std:.4f}",
     )
 
     prediction_results = create_predictions_dataframe(
@@ -668,7 +675,10 @@ def main() -> None:
         "tested_alpha_values": RIDGE_ALPHA_VALUES,
         "best_parameters": ridge_search.best_params_,
         "cross_validation_mae": float(
-            -ridge_search.best_score_
+            cross_validation_mae
+        ),
+        "cross_validation_mae_std": float(
+            cross_validation_mae_std
         ),
         "baseline_metrics": baseline_metrics,
         "test_metrics": ridge_metrics,
