@@ -1,4 +1,6 @@
+import argparse
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -19,86 +21,7 @@ from src.evaluate import (
 )
 
 
-TREATMENT_ID = "BRD-K12343256-001-08-9_2.5_HTS"
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-FEATURES_PATH = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / f"features_{TREATMENT_ID}.csv"
-)
-
-TARGET_PATH = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / f"target_{TREATMENT_ID}.csv"
-)
-
-TRAIN_IDS_PATH = (
-    PROJECT_ROOT
-    / "data"
-    / "splits"
-    / "train_model_ids.csv"
-)
-
-TEST_IDS_PATH = (
-    PROJECT_ROOT
-    / "data"
-    / "splits"
-    / "test_model_ids.csv"
-)
-
-MODEL_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "trained_models"
-    / f"elastic_net_{TREATMENT_ID}.joblib"
-)
-
-PREDICTIONS_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "predictions"
-    / f"elastic_net_{TREATMENT_ID}.csv"
-)
-
-METRICS_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "metrics"
-    / f"elastic_net_{TREATMENT_ID}.json"
-)
-
-COEFFICIENTS_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "metrics"
-    / f"elastic_net_coefficients_{TREATMENT_ID}.csv"
-)
-
-TARGET_PLOT_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "figures"
-    / f"target_distribution_{TREATMENT_ID}.png"
-)
-
-PREDICTION_PLOT_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "figures"
-    / f"elastic_net_actual_vs_predicted_{TREATMENT_ID}.png"
-)
-
-RESIDUAL_PLOT_OUTPUT_PATH = (
-    PROJECT_ROOT
-    / "artifacts"
-    / "figures"
-    / f"elastic_net_residuals_{TREATMENT_ID}.png"
-)
 
 RANDOM_STATE = 42
 CROSS_VALIDATION_FOLDS = 5
@@ -120,6 +43,96 @@ CONVERGENCE_TOLERANCE = 1e-4
 COEFFICIENT_ZERO_TOLERANCE = 1e-10
 
 
+@dataclass(frozen=True)
+class ModelPaths:
+    """Input and output paths for one treatment."""
+
+    features: Path
+    target: Path
+    train_ids: Path
+    test_ids: Path
+    model_output: Path
+    predictions_output: Path
+    metrics_output: Path
+    coefficients_output: Path
+    target_plot_output: Path
+    prediction_plot_output: Path
+    residual_plot_output: Path
+
+
+def build_paths(treatment_id: str) -> ModelPaths:
+    """Build all Elastic Net input and output paths for a treatment."""
+
+    return ModelPaths(
+        features=(
+            PROJECT_ROOT
+            / "data"
+            / "processed"
+            / f"features_{treatment_id}.csv"
+        ),
+        target=(
+            PROJECT_ROOT
+            / "data"
+            / "processed"
+            / f"target_{treatment_id}.csv"
+        ),
+        train_ids=(
+            PROJECT_ROOT
+            / "data"
+            / "splits"
+            / "train_model_ids.csv"
+        ),
+        test_ids=(
+            PROJECT_ROOT
+            / "data"
+            / "splits"
+            / "test_model_ids.csv"
+        ),
+        model_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "trained_models"
+            / f"elastic_net_{treatment_id}.joblib"
+        ),
+        predictions_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "predictions"
+            / f"elastic_net_{treatment_id}.csv"
+        ),
+        metrics_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "metrics"
+            / f"elastic_net_{treatment_id}.json"
+        ),
+        coefficients_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "metrics"
+            / f"elastic_net_coefficients_{treatment_id}.csv"
+        ),
+        target_plot_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "figures"
+            / f"target_distribution_{treatment_id}.png"
+        ),
+        prediction_plot_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "figures"
+            / f"elastic_net_actual_vs_predicted_{treatment_id}.png"
+        ),
+        residual_plot_output=(
+            PROJECT_ROOT
+            / "artifacts"
+            / "figures"
+            / f"elastic_net_residuals_{treatment_id}.png"
+        ),
+    )
+
+
 def validate_file_exists(path: Path) -> None:
     """Raise an informative error when a required file is missing."""
 
@@ -129,14 +142,14 @@ def validate_file_exists(path: Path) -> None:
         )
 
 
-def load_processed_data() -> pd.DataFrame:
+def load_processed_data(paths: ModelPaths) -> pd.DataFrame:
     """Load and merge processed features and target data."""
 
-    validate_file_exists(FEATURES_PATH)
-    validate_file_exists(TARGET_PATH)
+    validate_file_exists(paths.features)
+    validate_file_exists(paths.target)
 
-    features = pd.read_csv(FEATURES_PATH)
-    target = pd.read_csv(TARGET_PATH)
+    features = pd.read_csv(paths.features)
+    target = pd.read_csv(paths.target)
 
     if "ModelID" not in features.columns:
         raise ValueError(
@@ -249,14 +262,14 @@ def validate_modeling_data(
         )
 
 
-def load_split_ids() -> tuple[pd.Series, pd.Series]:
+def load_split_ids(paths: ModelPaths) -> tuple[pd.Series, pd.Series]:
     """Load the saved train and test ModelID lists."""
 
-    validate_file_exists(TRAIN_IDS_PATH)
-    validate_file_exists(TEST_IDS_PATH)
+    validate_file_exists(paths.train_ids)
+    validate_file_exists(paths.test_ids)
 
-    train_ids_data = pd.read_csv(TRAIN_IDS_PATH)
-    test_ids_data = pd.read_csv(TEST_IDS_PATH)
+    train_ids_data = pd.read_csv(paths.train_ids)
+    test_ids_data = pd.read_csv(paths.test_ids)
 
     if "ModelID" not in train_ids_data.columns:
         raise ValueError(
@@ -553,50 +566,54 @@ def save_outputs(
     metrics: dict[str, Any],
     predictions: pd.DataFrame,
     coefficients: pd.DataFrame,
+    paths: ModelPaths,
 ) -> None:
     """Save model artifacts and evaluation results."""
 
-    MODEL_OUTPUT_PATH.parent.mkdir(
+    paths.model_output.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    PREDICTIONS_OUTPUT_PATH.parent.mkdir(
+    paths.predictions_output.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    COEFFICIENTS_OUTPUT_PATH.parent.mkdir(
+    paths.coefficients_output.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
     joblib.dump(
         model,
-        MODEL_OUTPUT_PATH,
+        paths.model_output,
     )
 
     predictions.to_csv(
-        PREDICTIONS_OUTPUT_PATH,
+        paths.predictions_output,
         index=False,
     )
 
     coefficients.to_csv(
-        COEFFICIENTS_OUTPUT_PATH,
+        paths.coefficients_output,
         index=False,
     )
 
     save_json(
         data=metrics,
-        output_path=METRICS_OUTPUT_PATH,
+        output_path=paths.metrics_output,
     )
 
 
-def main() -> None:
-    data = load_processed_data()
+def run(treatment_id: str) -> None:
+    """Train and evaluate Elastic Net for one treatment."""
+
+    paths = build_paths(treatment_id)
+    data = load_processed_data(paths)
     validate_modeling_data(data)
 
-    train_ids, test_ids = load_split_ids()
+    train_ids, test_ids = load_split_ids(paths)
 
     (
         X_train,
@@ -611,7 +628,7 @@ def main() -> None:
         test_ids=test_ids,
     )
 
-    print(f"Treatment: {TREATMENT_ID}")
+    print(f"Treatment: {treatment_id}")
     print(f"Total samples: {len(data)}")
     print(f"Training samples: {len(X_train)}")
     print(f"Test samples: {len(X_test)}")
@@ -619,7 +636,7 @@ def main() -> None:
 
     plot_target_distribution(
         y=data["drug_response"],
-        output_path=TARGET_PLOT_OUTPUT_PATH,
+        output_path=paths.target_plot_output,
     )
 
     baseline_predictions = create_mean_baseline(
@@ -738,7 +755,7 @@ def main() -> None:
 
     metrics = {
         "model": "elastic_net",
-        "treatment_id": TREATMENT_ID,
+        "treatment_id": treatment_id,
         "total_sample_count": int(len(data)),
         "training_sample_count": int(
             len(X_train)
@@ -759,12 +776,12 @@ def main() -> None:
         ),
         "split_files": {
             "train": str(
-                TRAIN_IDS_PATH.relative_to(
+                paths.train_ids.relative_to(
                     PROJECT_ROOT
                 )
             ),
             "test": str(
-                TEST_IDS_PATH.relative_to(
+                paths.test_ids.relative_to(
                     PROJECT_ROOT
                 )
             ),
@@ -798,13 +815,13 @@ def main() -> None:
     plot_actual_vs_predicted(
         y_true=y_test,
         y_pred=elastic_net_predictions,
-        output_path=PREDICTION_PLOT_OUTPUT_PATH,
+        output_path=paths.prediction_plot_output,
     )
 
     plot_residuals(
         y_true=y_test,
         y_pred=elastic_net_predictions,
-        output_path=RESIDUAL_PLOT_OUTPUT_PATH,
+        output_path=paths.residual_plot_output,
     )
 
     save_outputs(
@@ -812,27 +829,47 @@ def main() -> None:
         metrics=metrics,
         predictions=prediction_results,
         coefficients=coefficients,
+        paths=paths,
     )
 
     print("\nSaved outputs:")
-    print(f"  Model: {MODEL_OUTPUT_PATH}")
-    print(f"  Metrics: {METRICS_OUTPUT_PATH}")
+    print(f"  Model: {paths.model_output}")
+    print(f"  Metrics: {paths.metrics_output}")
     print(
         f"  Predictions: "
-        f"{PREDICTIONS_OUTPUT_PATH}"
+        f"{paths.predictions_output}"
     )
     print(
         f"  Coefficients: "
-        f"{COEFFICIENTS_OUTPUT_PATH}"
+        f"{paths.coefficients_output}"
     )
     print(
         f"  Prediction plot: "
-        f"{PREDICTION_PLOT_OUTPUT_PATH}"
+        f"{paths.prediction_plot_output}"
     )
     print(
         f"  Residual plot: "
-        f"{RESIDUAL_PLOT_OUTPUT_PATH}"
+        f"{paths.residual_plot_output}"
     )
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for standalone model execution."""
+
+    parser = argparse.ArgumentParser(
+        description="Train an Elastic Net drug-response model."
+    )
+    parser.add_argument(
+        "--treatment-id",
+        required=True,
+        help="Treatment ID to model.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    run(args.treatment_id)
 
 
 if __name__ == "__main__":

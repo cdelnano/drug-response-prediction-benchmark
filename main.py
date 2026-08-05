@@ -1,44 +1,32 @@
-"""
-Main entry point for the Drug Response Prediction pipeline.
-"""
+import argparse
 
-from pathlib import Path
-
-from src.preprocess import preprocess
-
-# =============================================================================
-# Configuration
-# =============================================================================
-
-# Choose either a drug name OR a treatment ID
-DRUG_NAME = "trametinib"
-TREATMENT_ID = None
-
-OUTPUT_DIR = Path("data/processed")
+from models.ridge_regression.model import run as run_ridge
+from models.elastic_net.model import run as run_elastic_net
+from models.random_forest.model import run as run_random_forest
 
 
-# =============================================================================
-# Main
-# =============================================================================
+def parse_arguments() -> argparse.Namespace:
+    """Parse command-line arguments."""
 
-def main() -> None:
-    """Run the preprocessing pipeline."""
-
-    print("=" * 60)
-    print("Drug Response Prediction")
-    print("=" * 60)
-
-    modeling_data = preprocess(
-        drug_query=DRUG_NAME,
-        requested_treatment_id=TREATMENT_ID,
-        output_dir=OUTPUT_DIR,
+    parser = argparse.ArgumentParser(
+        description="Run all drug response prediction models."
     )
 
-    print("\nPreprocessing Complete")
-    print("-" * 60)
-    print(f"Samples: {len(modeling_data):,}")
-    print(f"Features: {modeling_data.shape[1] - 2:,}")
-    print(f"Output directory: {OUTPUT_DIR.resolve()}")
+    parser.add_argument(
+        "--treatment-id",
+        required=True,
+        help="Treatment ID to model (e.g. BRD-K12343256-001-08-9_2.5_HTS)",
+    )
+
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_arguments()
+
+    run_ridge(args.treatment_id)
+    run_elastic_net(args.treatment_id)
+    run_random_forest(args.treatment_id)
 
 
 if __name__ == "__main__":
