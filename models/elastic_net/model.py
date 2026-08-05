@@ -55,6 +55,7 @@ class ModelPaths:
     predictions_output: Path
     metrics_output: Path
     coefficients_output: Path
+    selected_genes_output: Path
     target_plot_output: Path
     prediction_plot_output: Path
     residual_plot_output: Path
@@ -62,6 +63,11 @@ class ModelPaths:
 
 def build_paths(treatment_id: str) -> ModelPaths:
     """Build all Elastic Net input and output paths for a treatment."""
+
+    treatment_output = (
+        PROJECT_ROOT / "artifacts" / "treatments" / treatment_id
+    )
+    model_output = treatment_output / "elastic_net"
 
     return ModelPaths(
         features=(
@@ -88,47 +94,19 @@ def build_paths(treatment_id: str) -> ModelPaths:
             / "splits"
             / "test_model_ids.csv"
         ),
-        model_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "trained_models"
-            / f"elastic_net_{treatment_id}.joblib"
-        ),
-        predictions_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "predictions"
-            / f"elastic_net_{treatment_id}.csv"
-        ),
-        metrics_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"elastic_net_{treatment_id}.json"
-        ),
-        coefficients_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"elastic_net_coefficients_{treatment_id}.csv"
-        ),
+        model_output=model_output / "model.joblib",
+        predictions_output=model_output / "predictions.csv",
+        metrics_output=model_output / "metrics.json",
+        coefficients_output=model_output / "coefficients.csv",
+        selected_genes_output=model_output / "selected_genes.csv",
         target_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"target_distribution_{treatment_id}.png"
+            treatment_output / "figures" / "target_distribution.png"
         ),
         prediction_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"elastic_net_actual_vs_predicted_{treatment_id}.png"
+            model_output / "figures" / "actual_vs_predicted.png"
         ),
         residual_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"elastic_net_residuals_{treatment_id}.png"
+            model_output / "figures" / "residuals.png"
         ),
     )
 
@@ -600,6 +578,11 @@ def save_outputs(
         index=False,
     )
 
+    coefficients[coefficients["selected"]].to_csv(
+        paths.selected_genes_output,
+        index=False,
+    )
+
     save_json(
         data=metrics,
         output_path=paths.metrics_output,
@@ -802,6 +785,12 @@ def run(treatment_id: str) -> None:
         "best_parameters": (
             elastic_net_search.best_params_
         ),
+        "model_parameters": {
+            "alpha": best_alpha,
+            "l1_ratio": best_l1_ratio,
+            "max_iter": MAX_ITERATIONS,
+            "tol": CONVERGENCE_TOLERANCE,
+        },
         "cross_validation_mae": float(
             cross_validation_mae
         ),
@@ -842,6 +831,10 @@ def run(treatment_id: str) -> None:
     print(
         f"  Coefficients: "
         f"{paths.coefficients_output}"
+    )
+    print(
+        f"  Selected genes: "
+        f"{paths.selected_genes_output}"
     )
     print(
         f"  Prediction plot: "
