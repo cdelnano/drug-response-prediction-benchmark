@@ -26,12 +26,14 @@ class SplitPaths:
 def build_paths(treatment_id: str) -> SplitPaths:
     """Build processed-data and split paths for one treatment."""
 
-    processed_directory = PROJECT_ROOT / "data" / "processed"
+    processed_directory = (
+        PROJECT_ROOT / "data" / "processed" / treatment_id
+    )
     split_directory = PROJECT_ROOT / "data" / "splits" / treatment_id
 
     return SplitPaths(
-        features=processed_directory / f"features_{treatment_id}.csv",
-        target=processed_directory / f"target_{treatment_id}.csv",
+        features=processed_directory / "features.csv",
+        target=processed_directory / "target.csv",
         split_directory=split_directory,
         train_ids=split_directory / "train_model_ids.csv",
         test_ids=split_directory / "test_model_ids.csv",

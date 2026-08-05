@@ -37,8 +37,6 @@ DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
 
 LOGGER = logging.getLogger(__name__)
 
-DRUG_NAME = "trametinib"
-TREATMENT_ID = None
 
 OUTPUT_DIR = Path("data/processed")
 
@@ -761,26 +759,18 @@ def save_outputs(
     output_dir: Path,
 ) -> None:
     """Save processed model data and preprocessing metadata."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     safe_treatment_id = re.sub(
         r"[^A-Za-z0-9_.-]+",
         "_",
         treatment_id,
     )
+    treatment_output_dir = output_dir / safe_treatment_id
+    treatment_output_dir.mkdir(parents=True, exist_ok=True)
 
-    modeling_data_path = (
-        output_dir / f"modeling_data_{safe_treatment_id}.csv"
-    )
-    features_path = (
-        output_dir / f"features_{safe_treatment_id}.csv"
-    )
-    target_path = (
-        output_dir / f"target_{safe_treatment_id}.csv"
-    )
-    metadata_path = (
-        output_dir / f"metadata_{safe_treatment_id}.json"
-    )
+    modeling_data_path = treatment_output_dir / "modeling_data.csv"
+    features_path = treatment_output_dir / "features.csv"
+    target_path = treatment_output_dir / "target.csv"
+    metadata_path = treatment_output_dir / "metadata.json"
 
     dataframe.to_csv(modeling_data_path, index=False)
 
@@ -1009,20 +999,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    """Run the preprocessing pipeline."""
-
-    print("=" * 60)
-    print("Drug Response Prediction")
-    print("=" * 60)
-
-    modeling_data = preprocess(
-        drug_query=DRUG_NAME,
-        requested_treatment_id=TREATMENT_ID,
-        output_dir=OUTPUT_DIR,
-    )
-
-    print("\nPreprocessing Complete")
-    print("-" * 60)
-    print(f"Samples: {len(modeling_data):,}")
-    print(f"Features: {modeling_data.shape[1] - 2:,}")
-    print(f"Output directory: {OUTPUT_DIR.resolve()}")
+    main()

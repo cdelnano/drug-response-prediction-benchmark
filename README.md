@@ -113,10 +113,11 @@ Outputs:
 ```text
 data/processed/
 
-features_<treatment>.csv
-target_<treatment>.csv
-modeling_data_<treatment>.csv
-metadata_<treatment>.json
+<treatment-id>/
+    features.csv
+    target.csv
+    modeling_data.csv
+    metadata.json
 ```
 
 ---

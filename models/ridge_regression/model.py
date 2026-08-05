@@ -67,13 +67,15 @@ def build_paths(treatment_id: str) -> ModelPaths:
             PROJECT_ROOT
             / "data"
             / "processed"
-            / f"features_{treatment_id}.csv"
+            / treatment_id
+            / "features.csv"
         ),
         target=(
             PROJECT_ROOT
             / "data"
             / "processed"
-            / f"target_{treatment_id}.csv"
+            / treatment_id
+            / "target.csv"
         ),
         train_ids=(
             PROJECT_ROOT
