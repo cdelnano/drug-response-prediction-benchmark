@@ -106,12 +106,14 @@ def build_paths(treatment_id: str) -> ModelPaths:
             PROJECT_ROOT
             / "data"
             / "splits"
+            / treatment_id
             / "train_model_ids.csv"
         ),
         test_ids=(
             PROJECT_ROOT
             / "data"
             / "splits"
+            / treatment_id
             / "test_model_ids.csv"
         ),
         model_output=model_output / "model.joblib",
