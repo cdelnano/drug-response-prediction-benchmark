@@ -57,6 +57,11 @@ class ModelPaths:
 def build_paths(treatment_id: str) -> ModelPaths:
     """Build all Ridge input and output paths for a treatment."""
 
+    treatment_output = (
+        PROJECT_ROOT / "artifacts" / "treatments" / treatment_id
+    )
+    model_output = treatment_output / "ridge_regression"
+
     return ModelPaths(
         features=(
             PROJECT_ROOT
@@ -74,55 +79,28 @@ def build_paths(treatment_id: str) -> ModelPaths:
             PROJECT_ROOT
             / "data"
             / "splits"
+            / treatment_id
             / "train_model_ids.csv"
         ),
         test_ids=(
             PROJECT_ROOT
             / "data"
             / "splits"
+            / treatment_id
             / "test_model_ids.csv"
         ),
-        model_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "trained_models"
-            / f"ridge_{treatment_id}.joblib"
-        ),
-        predictions_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "predictions"
-            / f"ridge_{treatment_id}.csv"
-        ),
-        metrics_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"ridge_{treatment_id}.json"
-        ),
-        coefficients_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"ridge_coefficients_{treatment_id}.csv"
-        ),
+        model_output=model_output / "model.joblib",
+        predictions_output=model_output / "predictions.csv",
+        metrics_output=model_output / "metrics.json",
+        coefficients_output=model_output / "coefficients.csv",
         target_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"target_distribution_{treatment_id}.png"
+            treatment_output / "figures" / "target_distribution.png"
         ),
         prediction_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"ridge_actual_vs_predicted_{treatment_id}.png"
+            model_output / "figures" / "actual_vs_predicted.png"
         ),
         residual_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"ridge_residuals_{treatment_id}.png"
+            model_output / "figures" / "residuals.png"
         ),
     )
 
@@ -691,6 +669,9 @@ def run(treatment_id: str) -> None:
         "scoring": "negative_mean_absolute_error",
         "tested_alpha_values": RIDGE_ALPHA_VALUES,
         "best_parameters": ridge_search.best_params_,
+        "model_parameters": {
+            "alpha": best_alpha,
+        },
         "cross_validation_mae": float(
             cross_validation_mae
         ),

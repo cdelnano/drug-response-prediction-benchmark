@@ -5,8 +5,13 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import matplotlib
 import numpy as np
 import pandas as pd
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
@@ -73,10 +78,16 @@ class ModelPaths:
     target_plot_output: Path
     prediction_plot_output: Path
     residual_plot_output: Path
+    feature_selection_plot_output: Path
 
 
 def build_paths(treatment_id: str) -> ModelPaths:
     """Build all Random Forest → Ridge paths for a treatment."""
+
+    treatment_output = (
+        PROJECT_ROOT / "artifacts" / "treatments" / treatment_id
+    )
+    model_output = treatment_output / "random_forest_ridge"
 
     return ModelPaths(
         features=(
@@ -95,67 +106,35 @@ def build_paths(treatment_id: str) -> ModelPaths:
             PROJECT_ROOT
             / "data"
             / "splits"
+            / treatment_id
             / "train_model_ids.csv"
         ),
         test_ids=(
             PROJECT_ROOT
             / "data"
             / "splits"
+            / treatment_id
             / "test_model_ids.csv"
         ),
-        model_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "trained_models"
-            / f"random_forest_ridge_{treatment_id}.joblib"
-        ),
-        predictions_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "predictions"
-            / f"random_forest_ridge_{treatment_id}.csv"
-        ),
-        metrics_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"random_forest_ridge_{treatment_id}.json"
-        ),
-        feature_ranking_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"random_forest_feature_ranking_{treatment_id}.csv"
-        ),
-        selected_genes_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"random_forest_selected_genes_{treatment_id}.csv"
-        ),
+        model_output=model_output / "model.joblib",
+        predictions_output=model_output / "predictions.csv",
+        metrics_output=model_output / "metrics.json",
+        feature_ranking_output=model_output / "feature_ranking.csv",
+        selected_genes_output=model_output / "selected_genes.csv",
         cross_validation_results_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "metrics"
-            / f"random_forest_ridge_cv_results_{treatment_id}.csv"
+            model_output / "cross_validation_results.csv"
         ),
         target_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"target_distribution_{treatment_id}.png"
+            treatment_output / "figures" / "target_distribution.png"
         ),
         prediction_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"random_forest_ridge_actual_vs_predicted_{treatment_id}.png"
+            model_output / "figures" / "actual_vs_predicted.png"
         ),
         residual_plot_output=(
-            PROJECT_ROOT
-            / "artifacts"
-            / "figures"
-            / f"random_forest_ridge_residuals_{treatment_id}.png"
+            model_output / "figures" / "residuals.png"
+        ),
+        feature_selection_plot_output=(
+            model_output / "figures" / "feature_selection.png"
         ),
     )
 
@@ -1008,6 +987,54 @@ def create_feature_ranking_dataframe(
     return ranking
 
 
+def plot_feature_selection(
+    cross_validation_results: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Plot the best cross-validation result for each Top K value."""
+
+    best_per_k = (
+        cross_validation_results
+        .sort_values("mean_validation_mae")
+        .groupby("top_k", as_index=False)
+        .first()
+        .sort_values("top_k")
+    )
+    best = best_per_k.loc[
+        best_per_k["mean_validation_mae"].idxmin()
+    ]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    plt.figure(figsize=(8, 5))
+    plt.errorbar(
+        best_per_k["top_k"],
+        best_per_k["mean_validation_mae"],
+        yerr=best_per_k["std_validation_mae"],
+        marker="o",
+        capsize=4,
+        linewidth=2,
+        label="Cross-validation MAE",
+    )
+    plt.scatter(
+        best["top_k"],
+        best["mean_validation_mae"],
+        s=120,
+        color="red",
+        zorder=5,
+        label=f"Selected K = {int(best['top_k'])}",
+    )
+    plt.xscale("log")
+    plt.xlabel("Top K selected genes")
+    plt.ylabel("Cross-validation MAE")
+    plt.title("Random Forest feature selection performance")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
 def convert_to_json_serializable(
     value: Any,
 ) -> Any:
@@ -1355,6 +1382,19 @@ def run(treatment_id: str) -> None:
                 best_ridge_alpha
             ),
         },
+        "model_parameters": {
+            "top_k": best_top_k,
+            "ridge_alpha": best_ridge_alpha,
+            "random_forest_n_estimators": (
+                RANDOM_FOREST_ESTIMATORS
+            ),
+            "random_forest_max_features": (
+                RANDOM_FOREST_MAX_FEATURES
+            ),
+            "random_forest_min_samples_leaf": (
+                RANDOM_FOREST_MIN_SAMPLES_LEAF
+            ),
+        },
         "cross_validation_mae": (
             cross_validation_mae
         ),
@@ -1388,6 +1428,11 @@ def run(treatment_id: str) -> None:
         y_true=y_test,
         y_pred=predictions,
         output_path=paths.residual_plot_output,
+    )
+
+    plot_feature_selection(
+        cross_validation_results=cross_validation_results,
+        output_path=paths.feature_selection_plot_output,
     )
 
     save_outputs(
@@ -1439,6 +1484,11 @@ def run(treatment_id: str) -> None:
     print(
         f"  Residual plot: "
         f"{paths.residual_plot_output}"
+    )
+
+    print(
+        f"  Feature-selection plot: "
+        f"{paths.feature_selection_plot_output}"
     )
 
 

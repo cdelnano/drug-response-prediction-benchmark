@@ -132,8 +132,9 @@ Outputs:
 ```text
 data/splits/
 
-train_model_ids.csv
-test_model_ids.csv
+<treatment-id>/
+    train_model_ids.csv
+    test_model_ids.csv
 ```
 
 Every model uses the same train/test split, ensuring fair comparisons between algorithms.
@@ -264,7 +265,8 @@ python -m src.preprocess
 ## Create the train/test split
 
 ```bash
-python -m src.split_data
+python -m src.split_data \
+    --treatment-id BRD-K12343256-001-08-9_2.5_HTS
 ```
 
 ---
