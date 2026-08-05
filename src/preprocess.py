@@ -30,6 +30,7 @@ from typing import Iterable
 import pandas as pd
 
 from src.data_loader import DepMapLoader, PrismLoader
+from src.path_utils import sanitize_treatment_id
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -759,11 +760,7 @@ def save_outputs(
     output_dir: Path,
 ) -> None:
     """Save processed model data and preprocessing metadata."""
-    safe_treatment_id = re.sub(
-        r"[^A-Za-z0-9_.-]+",
-        "_",
-        treatment_id,
-    )
+    safe_treatment_id = sanitize_treatment_id(treatment_id)
     treatment_output_dir = output_dir / safe_treatment_id
     treatment_output_dir.mkdir(parents=True, exist_ok=True)
 

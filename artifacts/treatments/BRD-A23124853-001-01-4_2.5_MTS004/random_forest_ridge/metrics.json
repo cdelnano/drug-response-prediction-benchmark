@@ -1,0 +1,79 @@
+{
+    "model": "random_forest_ridge",
+    "treatment_id": "BRD-A23124853-001-01-4::2.5::MTS004",
+    "total_sample_count": 535,
+    "training_sample_count": 428,
+    "test_sample_count": 107,
+    "original_feature_count": 19215,
+    "selected_feature_count": 100,
+    "selected_feature_fraction": 0.0052042674993494666,
+    "split_files": {
+        "train": "data/splits/BRD-A23124853-001-01-4_2.5_MTS004/train_model_ids.csv",
+        "test": "data/splits/BRD-A23124853-001-01-4_2.5_MTS004/test_model_ids.csv"
+    },
+    "random_state": 42,
+    "cross_validation_folds": 5,
+    "scoring": "negative_mean_absolute_error",
+    "tested_top_k_values": [
+        100,
+        250,
+        500,
+        1000,
+        2000,
+        5000,
+        10000,
+        15000,
+        19215
+    ],
+    "tested_ridge_alpha_values": [
+        0.01,
+        0.03162277660168379,
+        0.1,
+        0.31622776601683794,
+        1.0,
+        3.1622776601683795,
+        10.0,
+        31.622776601683793,
+        100.0,
+        316.22776601683796,
+        1000.0,
+        3162.2776601683795,
+        10000.0,
+        31622.776601683792,
+        100000.0,
+        316227.7660168379,
+        1000000.0
+    ],
+    "best_parameters": {
+        "top_k": 100,
+        "ridge_alpha": 3162.2776601683795
+    },
+    "model_parameters": {
+        "top_k": 100,
+        "ridge_alpha": 3162.2776601683795,
+        "random_forest_n_estimators": 300,
+        "random_forest_max_features": "sqrt",
+        "random_forest_min_samples_leaf": 2
+    },
+    "cross_validation_mae": 0.323500459491486,
+    "cross_validation_mae_std": 0.009679148303436618,
+    "random_forest_parameters": {
+        "n_estimators": 300,
+        "max_features": "sqrt",
+        "min_samples_leaf": 2
+    },
+    "baseline_metrics": {
+        "mae": 0.3104518253485008,
+        "rmse": 0.3873014384846329,
+        "r2": -0.1013151552557432,
+        "pearson": null,
+        "spearman": null
+    },
+    "test_metrics": {
+        "mae": 0.30096778296802695,
+        "rmse": 0.377623408794469,
+        "r2": -0.04696270663697155,
+        "pearson": 0.21317240763192108,
+        "spearman": 0.19072669919081486
+    }
+}

@@ -1,0 +1,62 @@
+{
+    "model": "elastic_net",
+    "treatment_id": "BRD-A23124853-001-01-4::2.5::MTS004",
+    "total_sample_count": 535,
+    "training_sample_count": 428,
+    "test_sample_count": 107,
+    "feature_count": 19215,
+    "selected_feature_count": 47,
+    "zero_coefficient_count": 19168,
+    "selected_feature_fraction": 0.0024460057246942493,
+    "split_files": {
+        "train": "data/splits/BRD-A23124853-001-01-4_2.5_MTS004/train_model_ids.csv",
+        "test": "data/splits/BRD-A23124853-001-01-4_2.5_MTS004/test_model_ids.csv"
+    },
+    "random_state": 42,
+    "cross_validation_folds": 5,
+    "scoring": "negative_mean_absolute_error",
+    "tested_alpha_values": [
+        0.0001,
+        0.0005623413251903491,
+        0.0031622776601683794,
+        0.01778279410038923,
+        0.1,
+        0.5623413251903491,
+        3.1622776601683795,
+        17.78279410038923,
+        100.0
+    ],
+    "tested_l1_ratio_values": [
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        0.9
+    ],
+    "best_parameters": {
+        "elastic_net__alpha": 0.5623413251903491,
+        "elastic_net__l1_ratio": 0.1
+    },
+    "model_parameters": {
+        "alpha": 0.5623413251903491,
+        "l1_ratio": 0.1,
+        "max_iter": 50000,
+        "tol": 0.0001
+    },
+    "cross_validation_mae": 0.3252742407889476,
+    "cross_validation_mae_std": 0.007623694446909646,
+    "baseline_metrics": {
+        "mae": 0.3104518253485008,
+        "rmse": 0.3873014384846329,
+        "r2": -0.1013151552557432,
+        "pearson": null,
+        "spearman": null
+    },
+    "test_metrics": {
+        "mae": 0.29956809088505,
+        "rmse": 0.3771214156467289,
+        "r2": -0.0441809999904621,
+        "pearson": 0.2576969730026287,
+        "spearman": 0.25331609161621504
+    }
+}

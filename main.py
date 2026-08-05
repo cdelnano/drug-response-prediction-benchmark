@@ -15,7 +15,10 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--treatment-id",
         required=True,
-        help="Treatment ID to model (e.g. BRD-K12343256-001-08-9_2.5_HTS)",
+        help=(
+            "Treatment ID to model; exact PRISM IDs containing '::' "
+            "are accepted."
+        ),
     )
 
     return parser.parse_args()

@@ -19,6 +19,7 @@ from src.evaluate import (
     plot_target_distribution,
     print_metrics,
 )
+from src.path_utils import sanitize_treatment_id
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -64,8 +65,10 @@ class ModelPaths:
 def build_paths(treatment_id: str) -> ModelPaths:
     """Build all Elastic Net input and output paths for a treatment."""
 
+    safe_treatment_id = sanitize_treatment_id(treatment_id)
+
     treatment_output = (
-        PROJECT_ROOT / "artifacts" / "treatments" / treatment_id
+        PROJECT_ROOT / "artifacts" / "treatments" / safe_treatment_id
     )
     model_output = treatment_output / "elastic_net"
 
@@ -74,28 +77,28 @@ def build_paths(treatment_id: str) -> ModelPaths:
             PROJECT_ROOT
             / "data"
             / "processed"
-            / treatment_id
+            / safe_treatment_id
             / "features.csv"
         ),
         target=(
             PROJECT_ROOT
             / "data"
             / "processed"
-            / treatment_id
+            / safe_treatment_id
             / "target.csv"
         ),
         train_ids=(
             PROJECT_ROOT
             / "data"
             / "splits"
-            / treatment_id
+            / safe_treatment_id
             / "train_model_ids.csv"
         ),
         test_ids=(
             PROJECT_ROOT
             / "data"
             / "splits"
-            / treatment_id
+            / safe_treatment_id
             / "test_model_ids.csv"
         ),
         model_output=model_output / "model.joblib",

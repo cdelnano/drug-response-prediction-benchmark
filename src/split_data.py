@@ -5,6 +5,8 @@ from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from src.path_utils import sanitize_treatment_id
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,10 +28,14 @@ class SplitPaths:
 def build_paths(treatment_id: str) -> SplitPaths:
     """Build processed-data and split paths for one treatment."""
 
+    safe_treatment_id = sanitize_treatment_id(treatment_id)
+
     processed_directory = (
-        PROJECT_ROOT / "data" / "processed" / treatment_id
+        PROJECT_ROOT / "data" / "processed" / safe_treatment_id
     )
-    split_directory = PROJECT_ROOT / "data" / "splits" / treatment_id
+    split_directory = (
+        PROJECT_ROOT / "data" / "splits" / safe_treatment_id
+    )
 
     return SplitPaths(
         features=processed_directory / "features.csv",
@@ -160,7 +166,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--treatment-id",
         required=True,
-        help="Treatment ID whose processed data should be split.",
+        help=(
+            "Treatment ID whose processed data should be split; exact "
+            "PRISM IDs containing '::' are accepted."
+        ),
     )
     return parser.parse_args()
 
