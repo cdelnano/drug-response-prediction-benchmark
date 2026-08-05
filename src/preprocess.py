@@ -37,6 +37,11 @@ DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
 
 LOGGER = logging.getLogger(__name__)
 
+DRUG_NAME = "trametinib"
+TREATMENT_ID = None
+
+OUTPUT_DIR = Path("data/processed")
+
 
 # These columns describe the sequencing record rather than gene expression.
 EXPRESSION_METADATA_COLUMNS = {
@@ -1004,4 +1009,20 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    """Run the preprocessing pipeline."""
+
+    print("=" * 60)
+    print("Drug Response Prediction")
+    print("=" * 60)
+
+    modeling_data = preprocess(
+        drug_query=DRUG_NAME,
+        requested_treatment_id=TREATMENT_ID,
+        output_dir=OUTPUT_DIR,
+    )
+
+    print("\nPreprocessing Complete")
+    print("-" * 60)
+    print(f"Samples: {len(modeling_data):,}")
+    print(f"Features: {modeling_data.shape[1] - 2:,}")
+    print(f"Output directory: {OUTPUT_DIR.resolve()}")

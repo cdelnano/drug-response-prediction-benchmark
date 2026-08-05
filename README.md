@@ -2,41 +2,69 @@
 
 Predicting cancer cell line drug response from gene expression using machine learning.
 
-This project uses gene expression data from the Cancer Dependency Map (DepMap) and PRISM drug response measurements to build and evaluate machine learning models capable of predicting how different cancer cell lines respond to small-molecule compounds.
+This project uses **Cancer Dependency Map (DepMap)** gene expression data and **PRISM Repurposing** drug response measurements to train and compare multiple machine learning models capable of predicting how cancer cell lines respond to therapeutic compounds.
 
-The project is designed with a modular architecture so multiple machine learning models can be trained and evaluated using the exact same preprocessing pipeline and train/test split.
+The repository provides a reproducible end-to-end pipeline for:
 
----
+- Preprocessing DepMap and PRISM datasets
+- Creating reproducible train/test splits
+- Training multiple machine learning models
+- Evaluating model performance using identical datasets
+- Comparing feature selection strategies
+- Generating artifacts and visualizations for downstream analysis
 
-## Dataset
+## Current Models
 
-### Gene Expression
-
-- Source: DepMap Public Release (https://depmap.org/portal/data_page/?tab=currentRelease)
-    - Gene.csv
-    - Model.csv
-    - OmicsExpressionTPMLogp1HumanProteinCodingGenes.csv
-    - PortalCompounds.csv
-- Features: RNA-seq gene expression
-- ~19,000 gene expression features per cell line
-
-### Drug Response
-
-- Source: PRISM Repurposing Primary Screen (https://depmap.org/repurposing/)
-    - primary-screen-cell-line-info.csv
-    - primary-screen-replicate-collapsed-logfold-change.csv
-    - primary-screen-replicate-collapsed-treatment-info.csv
-- Target: Drug response (log fold change) for a selected treatment
-
-The datasets are merged on `ModelID`, which uniquely identifies each cancer cell line.
+- Ridge Regression
+- Elastic Net Regression
+- Random Forest Feature Selection → Ridge Regression
 
 ---
 
-## Project Structure
+# Dataset
+
+## Gene Expression
+
+**Source:** Cancer Dependency Map (DepMap)
+
+Downloaded files:
+
+- `Gene.csv`
+- `Model.csv`
+- `OmicsExpressionTPMLogp1HumanProteinCodingGenes.csv`
+- `PortalCompounds.csv`
+
+Features:
+
+- RNA-seq gene expression
+- ~19,000 protein-coding genes
+- One row per cancer cell line
+
+---
+
+## Drug Response
+
+**Source:** PRISM Repurposing Primary Screen
+
+Downloaded files:
+
+- `primary-screen-cell-line-info.csv`
+- `primary-screen-replicate-collapsed-logfold-change.csv`
+- `primary-screen-replicate-collapsed-treatment-info.csv`
+
+Target:
+
+- Drug response (log fold change) for a selected compound
+
+The datasets are merged using `ModelID`, which uniquely identifies each cancer cell line.
+
+---
+
+# Project Structure
 
 ```text
 predict-drug-response/
-│
+
 ├── data/
 │   ├── raw/
 │   ├── processed/
@@ -48,8 +76,9 @@ predict-drug-response/
 │   └── evaluate.py
 │
 ├── models/
-│   └── ridge_regression/
-│       └── model.py
+│   ├── ridge_regression/
+│   ├── elastic_net/
+│   └── random_forest/
 │
 ├── artifacts/
 │   ├── trained_models/
@@ -57,35 +86,42 @@ predict-drug-response/
 │   ├── metrics/
 │   └── figures/
 │
+├── main.py
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Pipeline
+# Pipeline
 
-### 1. Preprocessing
+## 1. Data Preprocessing
 
 `src/preprocess.py`
 
-- Load DepMap gene expression data
-- Load PRISM drug response data
-- Select a treatment
-- Merge datasets using `ModelID`
-- Save processed feature and target datasets
+The preprocessing pipeline:
+
+- Loads DepMap gene expression data
+- Loads PRISM drug response data
+- Selects a treatment
+- Merges datasets using `ModelID`
+- Validates data integrity
+- Generates modeling datasets
 
 Outputs:
 
-```
+```text
 data/processed/
-    features_<treatment>.csv
-    target_<treatment>.csv
+
+features_<treatment>.csv
+target_<treatment>.csv
+modeling_data_<treatment>.csv
+metadata_<treatment>.json
 ```
 
 ---
 
-### 2. Train/Test Split
+## 2. Train/Test Split
 
 `src/split_data.py`
 
@@ -93,41 +129,75 @@ Creates a reproducible train/test split once and saves the selected `ModelID`s.
 
 Outputs:
 
-```
+```text
 data/splits/
-    train_model_ids.csv
-    test_model_ids.csv
+
+train_model_ids.csv
+test_model_ids.csv
 ```
 
-Every model loads these same files to ensure fair comparisons.
+Every model uses the same train/test split, ensuring fair comparisons between algorithms.
 
 ---
 
-### 3. Model Training
+## 3. Model Training
 
-Example:
+Each model follows the same workflow:
 
+- Load processed data
+- Validate inputs
+- Load the saved train/test split
+- Train using cross-validation
+- Evaluate on the held-out test set
+- Save predictions
+- Save metrics
+- Save diagnostic plots
+
+### Ridge Regression
+
+```text
+StandardScaler
+        ↓
+Ridge Regression
 ```
-models/ridge_regression/model.py
-```
 
-The model:
-
-- loads processed data
-- validates inputs
-- loads the saved train/test split
-- trains using cross validation
-- evaluates on the held-out test set
-- saves predictions
-- saves metrics
-- saves model coefficients
-- saves diagnostic plots
+A linear regression model using L2 regularization.
 
 ---
 
-## Evaluation
+### Elastic Net Regression
 
-Models are evaluated using:
+```text
+StandardScaler
+        ↓
+Elastic Net
+```
+
+Combines L1 and L2 regularization to simultaneously perform regression and embedded feature selection, automatically selecting informative genes by shrinking many coefficients to zero.
+
+---
+
+### Random Forest → Ridge Regression
+
+```text
+Random Forest
+        ↓
+Rank genes by importance
+        ↓
+Select Top K genes
+        ↓
+StandardScaler
+        ↓
+Ridge Regression
+```
+
+Random Forest is used only for nonlinear feature ranking. The selected genes are then used to train a Ridge regression model.
+
+---
+
+# Evaluation
+
+All models are evaluated on the same held-out test set using:
 
 - Mean Absolute Error (MAE)
 - Root Mean Squared Error (RMSE)
@@ -135,54 +205,47 @@ Models are evaluated using:
 - Pearson Correlation
 - Spearman Correlation
 
-A mean predictor baseline is also evaluated for comparison.
+A mean-prediction baseline is also evaluated for comparison.
+
+Hyperparameters are selected using 5-fold cross-validation.
 
 ---
 
-## Current Model
+# Outputs
 
-### Ridge Regression
+Running a model generates:
 
-Pipeline:
-
-```
-StandardScaler
-        ↓
-Ridge Regression
-```
-
-Hyperparameters are selected using GridSearchCV with 5-fold cross validation.
-
----
-
-## Outputs
-
-Running a model produces:
-
-```
+```text
 artifacts/
 
 trained_models/
-    ridge_<treatment>.joblib
+    <model>_<treatment>.joblib
 
 predictions/
-    ridge_<treatment>.csv
+    <model>_<treatment>.csv
 
 metrics/
-    ridge_<treatment>.json
-    ridge_coefficients_<treatment>.csv
+    <model>_<treatment>.json
+    <model>_coefficients_<treatment>.csv
 
 figures/
-    target_distribution.png
-    actual_vs_predicted.png
-    residuals.png
+    target_distribution_<treatment>.png
+    actual_vs_predicted_<treatment>.png
+    residuals_<treatment>.png
 ```
+
+Additional outputs are produced for model-specific analyses such as:
+
+- Elastic Net selected genes
+- Random Forest feature rankings
+- Random Forest selected genes
+- Cross-validation summaries
 
 ---
 
-## Running the Project
+# Running the Project
 
-### Install dependencies
+## Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -190,7 +253,7 @@ pip install -r requirements.txt
 
 ---
 
-### Preprocess the data
+## Preprocess the data
 
 ```bash
 python -m src.preprocess
@@ -198,7 +261,7 @@ python -m src.preprocess
 
 ---
 
-### Create the train/test split
+## Create the train/test split
 
 ```bash
 python -m src.split_data
@@ -206,45 +269,63 @@ python -m src.split_data
 
 ---
 
-### Train Ridge Regression
+## Train all models
 
 ```bash
-python -m models.ridge_regression.model
+python main.py \
+    --treatment-id BRD-K12343256-001-08-9_2.5_HTS
 ```
 
 ---
 
-## Extending the Project
+## Train an individual model
 
-Adding a new model only requires creating a new directory under `models/`.
+### Ridge Regression
 
-Example:
-
-```
-models/
-    ridge_regression/
-    elastic_net/
-    random_forest/
-    xgboost/
+```bash
+python -m models.ridge_regression.model \
+    --treatment-id BRD-K12343256-001-08-9_2.5_HTS
 ```
 
-Each model can reuse:
+### Elastic Net
 
-- preprocessing
-- train/test split
-- evaluation utilities
+```bash
+python -m models.elastic_net.model \
+    --treatment-id BRD-K12343256-001-08-9_2.5_HTS
+```
 
-allowing direct comparison using identical datasets.
+### Random Forest → Ridge
+
+```bash
+python -m models.random_forest.model \
+    --treatment-id BRD-K12343256-001-08-9_2.5_HTS
+```
 
 ---
 
-## Future Work
+# Model Comparison
 
-- Elastic Net Regression
-- Random Forest Regression
+This project investigates different strategies for predicting drug response from high-dimensional gene expression data.
+
+| Model | Question Answered |
+|--------|-------------------|
+| Ridge Regression | Can a linear model learn from all available genes? |
+| Elastic Net | Can sparse linear feature selection improve prediction while identifying informative genes? |
+| Random Forest → Ridge | Can nonlinear feature importance improve a linear prediction model? |
+
+All models share the same preprocessing pipeline and train/test split, enabling direct and reproducible comparisons.
+
+---
+
+# Future Work
+
+- Evaluate additional PRISM compounds
+- Compare model performance across many drugs
+- Deploy an interactive AWS dashboard for exploring results
+- SHAP-based model interpretation
 - XGBoost
 - Support Vector Regression
 - Neural Networks
-- Feature selection
-- SHAP model interpretation
+- Graph Neural Networks using biological pathway information
+- Pathway-guided regularization (e.g., GELnet)
 - Hyperparameter optimization with Optuna
